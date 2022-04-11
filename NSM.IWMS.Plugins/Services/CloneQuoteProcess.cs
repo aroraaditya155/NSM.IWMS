@@ -50,6 +50,36 @@ namespace NSM.IWMS.Plugins.Services
            
         }
 
+        public void InitiateCloneProcess(Entity newQuote)
+        {
+
+            if(newQuote != null && newQuote.Attributes.Contains("vel_sourcequote"))
+            {
+                var sourceQuote = newQuote.GetAttributeValue<EntityReference>("vel_sourcequote");
+                Entity sourceQuoteEntity = GetSourceQuote(sourceQuote.Id);
+                if (sourceQuoteEntity != null)
+                {
+                    Entity targetQuote = new Entity(newQuote.LogicalName);
+                    targetQuote = sourceQuoteEntity;
+                    targetQuote["quoteid"]=newQuote["quoteid"];
+                    targetQuote.Id = newQuote.Id;
+                    targetQuote["opportunityid"] = newQuote["opportunityid"];
+
+                    traceService.Trace(string.Format("Info : {0}", "Updating Target Quote"));
+                    organizationService.Update(targetQuote);
+                    traceService.Trace(string.Format("Info : {0} ", "Target Quote Updated: "));
+                    CopyQuoteProducts(sourceQuote.Id, newQuote.Id);
+                    traceService.Trace(string.Format("Info : {0}", "Quote Products Created"));
+                   // return targetQuoteId.ToString();
+                }
+
+                else
+                {
+                    throw new Exception("Error - IntitiateCloneProcess - Invalid Source ID" );
+                }
+            }
+        }
+
        private void CopyQuoteProducts( Guid sourceQuoteId, Guid targetQuoteId)
         {
             string fetchXml = $@"<fetch version='1.0' output-format='xml-platform' mapping='logical' distinct='false'>
@@ -105,7 +135,7 @@ namespace NSM.IWMS.Plugins.Services
         {
             string fetchXml = $@"<fetch version='1.0' output-format='xml-platform' mapping='logical' distinct='false'>
   <entity name='quote'>
-    <attribute name='name' />
+   
     <attribute name='customerid' />
     <attribute name='statecode' />
     <attribute name='totalamount' />

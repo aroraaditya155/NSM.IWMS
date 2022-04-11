@@ -24,7 +24,11 @@ namespace NSM.IWMS.Plugins
             {
                 if (context.MessageName == "Create")
                 {
-
+                    if (context.InputParameters.Contains("Target"))
+                    {
+                        Entity quote = (Entity)context.InputParameters["Target"];
+                        cloneQuoteProcess.InitiateCloneProcess(quote);
+                    }
                 }
                 else {
                     if (context.InputParameters.Contains("SourceId"))
