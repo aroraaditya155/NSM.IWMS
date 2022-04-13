@@ -24,7 +24,13 @@ namespace NSM.IWMS.Plugins.Services
             traceService = trace;
         }
 
-
+        /// <summary>
+        /// Create New Quote
+        /// </summary>
+        /// <param name="entityName"></param>
+        /// <param name="entityId"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
          public string InitiateCloneProcess(string entityName, Guid entityId)
         {
             Entity sourceQuote = GetSourceQuote(entityId);
@@ -50,6 +56,11 @@ namespace NSM.IWMS.Plugins.Services
            
         }
 
+        /// <summary>
+        /// For Exisiting Quote, Update values
+        /// </summary>
+        /// <param name="newQuote"></param>
+        /// <exception cref="Exception"></exception>
         public void InitiateCloneProcess(Entity newQuote)
         {
 
@@ -64,7 +75,15 @@ namespace NSM.IWMS.Plugins.Services
                     targetQuote["quoteid"]=newQuote["quoteid"];
                     targetQuote.Id = newQuote.Id;
                     targetQuote["opportunityid"] = newQuote["opportunityid"];
+                    traceService.Trace(string.Format("Quote ID Logic"));
+                    // Quote ID Logic
+                    if (!newQuote.Attributes.Contains("name") && newQuote.Attributes.Contains("opportunityid"))
+                    {
+                        traceService.Trace(string.Format("Quote ID Logic 2"));
+                        var quoteId =  GetRFQName(newQuote.GetAttributeValue<EntityReference>("opportunityid").Id) + ".1";
+                        targetQuote["name"] = quoteId;
 
+                    }
                     traceService.Trace(string.Format("Info : {0}", "Updating Target Quote"));
                     organizationService.Update(targetQuote);
                     traceService.Trace(string.Format("Info : {0} ", "Target Quote Updated: "));
@@ -137,7 +156,7 @@ namespace NSM.IWMS.Plugins.Services
   <entity name='quote'>
    
     <attribute name='customerid' />
-    <attribute name='statecode' />
+ 
     <attribute name='totalamount' />
     <attribute name='quoteid' />
     <attribute name='createdon' />
@@ -173,6 +192,23 @@ namespace NSM.IWMS.Plugins.Services
                 traceService.Trace(string.Format("Error Occurred : {0} in {1}", "Source Quote Not Found", "GetSourceQuote"));
                 return null;
             }
+        }
+
+        private string GetRFQName(Guid rfqId)
+        {
+            var rfqName = string.Empty;
+            if (rfqId != Guid.Empty)
+            {
+                traceService.Trace(string.Format("GetRFQName"));
+                Entity rfq = organizationService.Retrieve("opportunity", rfqId, new ColumnSet(new string[] { "name" }));
+                if (rfq != null)
+                {
+                  
+                    rfqName = rfq.Attributes.Contains("name")?rfq.GetAttributeValue<string>("name"):string.Empty;
+                    traceService.Trace(string.Format("RFQ ID - {0}", rfqName));
+                }
+            }
+            return rfqName;
         }
     }
 }
